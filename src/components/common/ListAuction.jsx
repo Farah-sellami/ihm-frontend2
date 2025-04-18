@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { ProductList } from '../hero/ProductList';
-import { FilterSide } from './FilterSide';
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ProductList } from "../hero/ProductList";
+import { FilterSide } from "./FilterSide";
 import { Container, Title } from "../../router";
-import { FiFilter } from 'react-icons/fi';
+import { FiFilter } from "react-icons/fi";
 
 export const ListAuction = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [showFilters, setShowFilters] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [PriceFilter, setPriceFilter] = useState(null);
+  const [priceFilter, setPriceFilter] = useState([0, 1000]);
+
   // Fetch subcategories from the API
   useEffect(() => {
     const fetchSubcategories = async () => {
@@ -24,6 +29,31 @@ export const ListAuction = () => {
 
     fetchSubcategories();
   }, []);
+
+  // Parse query parameters on initial load
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+
+    const subcategory = queryParams.get("scategorie_id");
+    const minPrice = queryParams.get("min_price");
+    const maxPrice = queryParams.get("max_price");
+
+    if (subcategory) setSelectedSubcategory(subcategory);
+    if (minPrice && maxPrice) setPriceFilter([Number(minPrice), Number(maxPrice)]);
+  }, [location.search]);
+
+  // Update query parameters when filters change
+  useEffect(() => {
+    const queryParams = new URLSearchParams();
+
+    if (selectedSubcategory) queryParams.set("scategorie_id", selectedSubcategory);
+    if (priceFilter) {
+      queryParams.set("min_price", priceFilter[0]);
+      queryParams.set("max_price", priceFilter[1]);
+    }
+
+    navigate(`?${queryParams.toString()}`, { replace: true });
+  }, [selectedSubcategory, priceFilter, navigate]);
 
   return (
     <>
@@ -59,16 +89,18 @@ export const ListAuction = () => {
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 lg:px-20 py-6 lg:py-10">
         {/* Sidebar */}
-        <div className={`
+        <div
+          className={`
           fixed lg:relative inset-0 z-20 bg-white
           transform lg:transform-none transition-transform duration-300
-          ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${showFilters ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           w-3/4 sm:w-1/2 lg:w-1/4 h-full lg:h-auto overflow-y-auto
-        `}>
+        `}
+        >
           <div className="lg:sticky lg:top-20">
             <div className="flex lg:hidden justify-between items-center p-4 border-b">
               <h2 className="font-semibold">Filters</h2>
-              <button 
+              <button
                 onClick={() => setShowFilters(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
@@ -78,14 +110,14 @@ export const ListAuction = () => {
             <FilterSide
               subcategories={subcategories}
               onSelectSubcategory={setSelectedSubcategory}
-              onPriceFilterChange={(priceRange) => setPriceFilter(priceRange)}
+              onPriceFilterChange={setPriceFilter}
             />
           </div>
         </div>
 
         {/* Backdrop for mobile filter */}
         {showFilters && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
             onClick={() => setShowFilters(false)}
           />
@@ -93,7 +125,7 @@ export const ListAuction = () => {
 
         {/* Product list */}
         <div className="w-full lg:w-3/4">
-          <ProductList selectedSubcategory={selectedSubcategory} />
+          <ProductList selectedSubcategory={selectedSubcategory} priceRange={priceFilter} />
         </div>
       </div>
     </>

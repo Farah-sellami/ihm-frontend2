@@ -1,20 +1,32 @@
-import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Container, Heading } from "../../router";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
-const CategoryCard = ({ item, subcategories, onClick }) => {
+const CategoryCard = ({ item, subcategories, onCategoryClick, onSubcategoryClick }) => {
   return (
-    <div
-      className="category-card bg-white p-4 border rounded-lg shadow-md hover:shadow-lg cursor-pointer transition duration-200 ease-in-out text-center"
-      onClick={() => onClick(item.id)} // Fetch subcategories when clicked
-    >
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{item.title}</h3>
-      {/* Subcategories section */}
+    <div className="min-w-[140px] h-[140px] flex-shrink-0 bg-white p-4 border rounded-xl shadow-md hover:shadow-lg cursor-pointer transition duration-200 ease-in-out text-center mx-2 flex flex-col justify-center">
+      <h3 
+        className="text-md font-semibold text-gray-800 mb-2 hover:text-blue-600"
+        onClick={() => onCategoryClick(item.id)}
+      >
+        {item.title}
+      </h3>
+      {/* Subcategories */}
       {subcategories && subcategories.length > 0 && (
-        <div className="mt-4 text-left">
-          <ul className="list-disc pl-6 text-sm text-gray-600">
+        <div className="mt-2 text-left">
+          <ul className="list-disc pl-4 text-xs text-gray-600">
             {subcategories.map((subcategory) => (
-              <li key={subcategory.id}>{subcategory.titre}</li>
+              <li 
+                key={subcategory.id}
+                className="hover:text-blue-600 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent category click
+                  onSubcategoryClick(subcategory.id);
+                }}
+              >
+                {subcategory.titre}
+              </li>
             ))}
           </ul>
         </div>
@@ -22,12 +34,14 @@ const CategoryCard = ({ item, subcategories, onClick }) => {
     </div>
   );
 };
-export const CategorySlider = () => {
-  const [categories, setCategories] = useState([]); // State for categories
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term
-  const [subcategoryMap, setSubcategoryMap] = useState({}); // State to map categories to subcategories
 
-  // Fetch categories from the backend API
+export const CategorySlider = ({ onSubcategorySelect }) => {
+  const [categories, setCategories] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [subcategoryMap, setSubcategoryMap] = useState({});
+  const containerRef = useRef(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -38,23 +52,21 @@ export const CategorySlider = () => {
         console.error("Error fetching categories:", error);
       }
     };
-
     fetchCategories();
   }, []);
 
-  // Fetch subcategories for a specific category and update the map
   const handleCategoryClick = async (categoryId) => {
     try {
       if (subcategoryMap[categoryId]) {
-        // If subcategories already exist, toggle them off
         setSubcategoryMap((prev) => {
           const updatedMap = { ...prev };
           delete updatedMap[categoryId];
           return updatedMap;
         });
       } else {
-        // If subcategories don't exist, fetch and add them
-        const response = await fetch(`http://localhost:8000/api/categories/${categoryId}/scategories`);
+        const response = await fetch(
+          `http://localhost:8000/api/categories/${categoryId}/scategories`
+        );
         const subcategories = await response.json();
         setSubcategoryMap((prev) => ({ ...prev, [categoryId]: subcategories }));
       }
@@ -62,11 +74,26 @@ export const CategorySlider = () => {
       console.error("Error fetching subcategories:", error);
     }
   };
-  
-  // Filter categories based on the search term
+
+  const handleSubcategoryClick = (subcategoryId) => {
+    // You can either navigate to a subcategory page or use a callback
+    if (onSubcategorySelect) {
+      onSubcategorySelect(subcategoryId);
+    } else {
+      // Default behavior: navigate to subcategory page
+      navigate(`/subcategory/${subcategoryId}`);
+    }
+  };
+
   const filteredCategories = categories.filter((item) =>
     item.titre.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const scroll = (scrollOffset) => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: scrollOffset, behavior: "smooth" });
+    }
+  };
 
   return (
     <section className="category-slider pb-16 bg-gray-100">
@@ -86,21 +113,42 @@ export const CategorySlider = () => {
           </button>
         </div>
 
-        <Heading
-          title="Browse the categories"
-          subtitle="Most viewed and all-time top-selling category"
-        />
+        {/* Heading */}
+        <Heading title="Browse the categories" subtitle="Most viewed and all-time top-selling category" />
 
-        {/* Categories */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {filteredCategories.map((item) => (
-            <CategoryCard
-              key={item.id}
-              item={{ id: item.id, title: item.titre }}
-              subcategories={subcategoryMap[item.id]} // Pass subcategories for the category
-              onClick={handleCategoryClick}
-            />
-          ))}
+        {/* Arrows */}
+        <div className="relative">
+          {/* Left Arrow */}
+          <button
+            onClick={() => scroll(-300)}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white border rounded-full shadow p-2 z-10 hover:bg-gray-100"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {/* Category list */}
+          <div
+            ref={containerRef}
+            className="flex overflow-x-hidden no-scrollbar py-4"
+          >
+            {filteredCategories.map((item) => (
+              <CategoryCard
+                key={item.id}
+                item={{ id: item.id, title: item.titre }}
+                subcategories={subcategoryMap[item.id]}
+                onCategoryClick={handleCategoryClick}
+                onSubcategoryClick={handleSubcategoryClick}
+              />
+            ))}
+          </div>
+
+          {/* Right Arrow */}
+          <button
+            onClick={() => scroll(300)}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white border rounded-full shadow p-2 z-10 hover:bg-gray-100"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </Container>
     </section>

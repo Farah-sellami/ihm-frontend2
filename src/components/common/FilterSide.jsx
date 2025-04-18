@@ -44,6 +44,7 @@ export const FilterSide = ({ subcategories, onSelectSubcategory, onPriceFilterCh
               {/* Subcategory Filter */}
               <div className="mt-4 px-4">
                 <h3 className="font-semibold text-lg mb-4">Filter by Subcategory</h3>
+                
                 <ul className="space-y-2">
                   {subcategories.map((subcategory) => (
                     <li key={subcategory.id}>

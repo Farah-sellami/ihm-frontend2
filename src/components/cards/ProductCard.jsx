@@ -5,42 +5,53 @@ import { Caption, SecondaryButton, ProfileCard, Title } from "../common/Design";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-// Fonction pour calculer le temps restant
-const formatDuration = (endTime) => {
+// Updated time formatting function
+const formatDuration = (endDate) => {
   const now = new Date();
-  const timeRemaining = endTime - now;
+  const end = new Date(endDate);
+  const timeRemaining = end - now;
 
-  if (timeRemaining <= 0) return "0d : 0h : 0m : 0s";
+  if (timeRemaining <= 0) return "Expired";
 
   const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
   const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
 
-  return `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
+  // Only show days if > 0
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  // Only show hours if > 0
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  // Otherwise show minutes and seconds
+  return `${minutes}m ${seconds}s`;
 };
 
 export const ProductCard = ({ item }) => {
-  const [remainingTime, setRemainingTime] = useState(formatDuration(new Date(item.duree)));
+  const [remainingTime, setRemainingTime] = useState(
+    formatDuration(item.endDate)
+  );
   const [loading, setLoading] = useState(true);
 
-  // Simuler le chargement
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 1000); // durée de chargement simulée : 1 seconde
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Mise à jour du compte à rebours
+  // Updated countdown effect
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setRemainingTime(formatDuration(new Date(item.duree)));
+      setRemainingTime(formatDuration(item.endDate));
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [item.duree]);
+  }, [item.endDate]);
 
   if (loading) {
     return (
@@ -69,7 +80,7 @@ export const ProductCard = ({ item }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Caption className="text-blue-500 bg-white px-3 py-1 text-sm rounded-full">
-                {remainingTime || "0d : 0h : 0m : 0s"}
+                {remainingTime}
               </Caption>
               <Caption className="text-green bg-green_100 px-3 py-1 text-sm rounded-full">
                 {item.estApprouvé ? "Approuvé" : "Non approuvé"}
@@ -96,7 +107,9 @@ export const ProductCard = ({ item }) => {
         <hr className="mb-3" />
 
         <div className="flex items-center justify-between mt-3">
-          <SecondaryButton className="rounded-md text-sm px-4 py-2">Add Bid</SecondaryButton>
+          <SecondaryButton className="rounded-md text-sm px-4 py-2">
+            Add Bid
+          </SecondaryButton>
           <button
             onClick={() => handleFavorite(item)}
             className="border border-[#D47400] rounded-md p-2 bg-transparent hover:bg-[#FBF1E5] transition-colors duration-200"
@@ -111,7 +124,7 @@ export const ProductCard = ({ item }) => {
   );
 };
 
-// Gestion des favoris
+// Favorite handler remains the same
 const handleFavorite = (item) => {
   let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
@@ -124,6 +137,7 @@ const handleFavorite = (item) => {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 };
 
+// Updated PropTypes
 ProductCard.propTypes = {
   item: PropTypes.shape({
     id: PropTypes.number,
@@ -131,7 +145,7 @@ ProductCard.propTypes = {
     titre: PropTypes.string,
     description: PropTypes.string,
     prixIniale: PropTypes.number,
-    duree: PropTypes.string,
+    endDate: PropTypes.string, // Changed from duree to endDate
     estApprouvé: PropTypes.bool,
   }).isRequired,
 };

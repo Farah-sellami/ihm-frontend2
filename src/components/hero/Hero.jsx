@@ -1,109 +1,64 @@
-import { Body, Caption, Container, PrimaryButton,ProfileCard, Title } from "../../router";
-import { SecondaryButton} from "../common/Design";
-import { IoIosSearch } from "react-icons/io";
-import { AiOutlinePropertySafety } from "react-icons/ai";
-import PropTypes from "prop-types";
-import { CiCirclePlus } from "react-icons/ci";
+import {
+  Body,
+  Caption,
+  Container,
+  PrimaryButton,
+  Title,
+} from "../../router";
+import { Search } from "lucide-react";
+import { useState } from "react";
+import { Link } from 'react-router-dom';
+
 export const User1 = "https://cdn-icons-png.flaticon.com/128/6997/6997662.png";
 export const User2 = "https://cdn-icons-png.flaticon.com/128/236/236832.png";
 export const User3 = "https://cdn-icons-png.flaticon.com/128/236/236831.png";
 export const User4 = "https://cdn-icons-png.flaticon.com/128/1154/1154448.png";
 
 export const Hero = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+
   return (
-    <>
-      <section className="hero bg-primary py-8">
-        <Container className="flex items-center justify-between md:flex-row flex-col">
-          <div className="w-full md:w-1/2 text-white pr-12">
-            <Body className="leading-7 text-gray-200 my-8"></Body>
-            <SearchBox />
-            <div className="flex items-center gap-8 my-8">
-              <div className="border border-[#20354c] bg-[#20354c] text-white rounded-xl p-4 text-center">
-                <Title level={4} className="text-white">54</Title>
-                <Body className="leading-7 text-white">Total Product</Body>
-              </div>
-              <div className="border border-[#20354c] bg-[#20354c] text-white rounded-xl p-4 text-center">
-                <Title level={4} className="text-white">842M</Title>
-                <Body className="leading-7 text-white">Total Auction</Body>
-              </div>
-              <div className="border border-[#20354c] bg-[#20354c] text-white rounded-xl p-4 text-center">
-                <Title level={4} className="text-white">54</Title>
-                <Body className="leading-7 text-white">Total Category</Body>
-              </div>
-            </div>
-          </div>
-          <div className="w-full md:w-1/2 my-16 relative py-16">
-            <img src="../images/home/hero.webp" alt="" />
-            <div className="horiz-move absolute md:top-28 top-8 left-0">
-              <Box title="Proof of quality" desc="Lorem Ipsum Dolar Amet" />
-            </div>
-            <div className="horiz-move absolute bottom-72 right-0">
-              <Box title="Safe and secure" desc="Lorem Ipsum Dolar Amet" />
-            </div>
-            <div className="px-5 py-4 bg-[#20354c] shadow-md flex items-center gap-5 rounded-xl ml-5 -mt-5 vert-move w-1/2">
-              <Title className="text-white">58M Happy Client</Title>
-              <div className="flex items-center">
-                <ProfileCard className="border-2 border-[#20354c]">
-                  <img src={User1} alt="User1" className="w-full h-full object-cover" />
-                </ProfileCard>
-                <ProfileCard className="border-2 border-[#20354c] -ml-4">
-                  <img src={User2} alt="User1" className="w-full h-full object-cover" />
-                </ProfileCard>
-                <ProfileCard className="border-2 border-[#20354c] -ml-4">
-                  <img src={User3} alt="User1" className="w-full h-full object-cover" />
-                </ProfileCard>
-                <ProfileCard className="border-2 border-[#20354c] -ml-4">
-                  <img src={User4} alt="User1" className="w-full h-full object-cover" />
-                </ProfileCard>
-                <ProfileCard className="border-2 border-[#20354c] -ml-4">
-                  <CiCirclePlus size={27} className="text-white" />
-                </ProfileCard>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
-    </>
-  );
-};
+<section
+  className="relative h-[500px] flex items-center justify-center pt-20"
+  style={{
+    background: "linear-gradient(180deg, #20354c 0%, #2e4966 50%, #3d5f80 100%)",
+  }}
+>
+  <div className="absolute inset-0 bg-black bg-opacity-20 backdrop-blur-sm"></div>
 
+  <div className="relative z-10 text-center text-white px-4 w-full max-w-3xl">
+    <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
+      Discover Unique Auctions
+    </h1>
+    <p className="text-lg md:text-xl mb-6 text-gray-200">
+      Bid on exclusive items and rare collectibles from verified sellers worldwide
+    </p>
+    <Link to="/Auctions">
+    <button className="mb-6 px-6 py-3 text-base font-semibold rounded-xl border border-white text-white bg-white/10 hover:bg-white hover:text-[#20354c] transition duration-300">
+  Explore Auctions
+</button>
+</Link>
 
-  const SearchBox = () => {
-    return (
-      <>
-        <form className="">
-          <label htmlFor="default-search" className="mb-2 text-sm font-medium text-gray-800 sr-only">
-            Search
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 start-2 flex items-center ps-3 pointer-events-none">
-              <IoIosSearch color="black" size={25} />
-            </div>
-            <input type="search" id="default-search" className="block shadow-md w-full p-6 ps-16 text-sm text-gray-800 rounded-full bg-gray-50 outline-none" placeholder="Search product..." />
-            <SecondaryButton className="absolute end-2.5 bottom-2">Search</SecondaryButton>
-          </div>
-        </form>
-      </>
-    );
-  };
-
-const Box = ({ title, desc }) => {
-  return (
-    <>
-      <div className="px-5 py-4 bg-white shadow-md flex items-center gap-5 rounded-xl w-auto">
-        <div className="w-14 h-14 bg-green_100 flex items-center justify-center rounded-full">
-          <AiOutlinePropertySafety size={27} className="text-primary" />
-        </div>
-        <div>
-          <Title>{title}</Title>
-          <Caption>{desc}</Caption>
-        </div>
+    {/* Search bar */}
+    <form className="w-full mt-2 px-4" onSubmit={(e) => e.preventDefault()}>
+      <div className="relative max-w-xl mx-auto">
+        <input
+          type="text"
+          placeholder="Search auctions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full py-3 pl-4 pr-28 rounded-full text-black text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+        />
+        <button
+          type="submit"
+          className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full text-sm"
+        >
+          Search
+        </button>
       </div>
-    </>
-  );
-};
+    </form>
+  </div>
+</section>
 
-Box.propTypes = {
-  title: PropTypes.any,
-  desc: PropTypes.any,
+  );
 };

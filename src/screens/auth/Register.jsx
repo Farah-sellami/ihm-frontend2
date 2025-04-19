@@ -3,6 +3,7 @@ import { commonClassNameOfInput } from "../../components/common/Design";
 import { useState } from "react";
 import authService from "../../api/authService";
 import { useNavigate } from "react-router-dom";  // Importer useNavigate
+import { Link } from "react-router-dom";
 
 export const Register = () => {
   const [photo, setPhoto] = useState(null);
@@ -51,6 +52,28 @@ export const Register = () => {
 
   return (
     <>
+            <div className="bg-[#241C37] pt-8 h-[40vh] relative content">
+              <Container>
+                <div>
+                  <Title level={3} className="text-white">
+                    Register 
+                  </Title>
+                  <div className="flex items-center gap-3">
+                  <Link to="/" className="text-white font-normal text-xl" onClick={() => console.log("clicked")}>
+      Home
+    </Link>
+    
+    
+                    <Title level={5} className="text-white font-normal text-xl">
+                      /
+                    </Title>
+                    <Title level={5} className="text-white font-normal text-xl">
+                    Register
+                    </Title>
+                  </div>
+                </div>
+              </Container>
+            </div>
       {/* Reste de votre code */}
       
       {/* Modal de succès */}

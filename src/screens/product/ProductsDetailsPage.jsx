@@ -15,16 +15,29 @@ export const ProductsDetailsPage = () => {
   const [auctionHistory, setAuctionHistory] = useState([]);
   const [bidAmount, setBidAmount] = useState("");
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [offerTitle, setOfferTitle] = useState(""); // State for the offer title
-  const [offerDescription, setOfferDescription] = useState(""); // State for the offer description
+  const [editBid, setEditBid] = useState(null);
+  const [editMontant, setEditMontant] = useState("");
 
+  // Fetch product and auction history
   useEffect(() => {
-    const fetchProductDetails = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/postes/${id}`);
-        if (!res.ok) throw new Error("Erreur lors du chargement du produit");
-        const data = await res.json();
-        setProduct(data);
+        const [productRes, historyRes] = await Promise.all([
+          fetch(`http://localhost:8000/api/postes/${id}`),
+          fetch(`http://localhost:8000/api/offres/poste/${id}`)
+        ]);
+
+        if (!productRes.ok || !historyRes.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        const [productData, historyData] = await Promise.all([
+          productRes.json(),
+          historyRes.json()
+        ]);
+
+        setProduct(productData);
+        setAuctionHistory(historyData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -32,218 +45,160 @@ export const ProductsDetailsPage = () => {
       }
     };
 
-    const fetchAuctionHistory = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/api/offres/poste/${id}`);
-        if (!res.ok) throw new Error("Erreur lors du chargement de l'historique des enchères");
-        const data = await res.json();
-        setAuctionHistory(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchProductDetails();
-    fetchAuctionHistory();
+    fetchData();
   }, [id]);
 
+  // Countdown timer
   useEffect(() => {
-    if (!product?.duree) return;
+    if (!product?.endDate) {
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
 
     const updateTimeLeft = () => {
-      const now = new Date();
-      const end = new Date(product.duree);
-      const diff = end - now;
+      try {
+        const now = new Date();
+        const end = new Date(product.endDate);
+        const diff = end - now;
 
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      } 
+        if (diff <= 0) {
+          setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+          return;
+        }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds });
+        setTimeLeft({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((diff / (1000 * 60)) % 60),
+          seconds: Math.floor((diff / 1000) % 60)
+        });
+      } catch (err) {
+        console.error("Error calculating time:", err);
+      }
     };
 
-    updateTimeLeft(); // init
+    updateTimeLeft();
     const timer = setInterval(updateTimeLeft, 1000);
-
     return () => clearInterval(timer);
-  }, [product?.duree]);
-
-  const deleteProduct = async (productId) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Êtes-vous sûr ?',
-        text: 'Ce produit sera définitivement supprimé.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler',
-      });
-
-      if (result.isConfirmed) {
-        await axios.delete(`http://localhost:8000/api/offres/${productId}`);
-        
-        Swal.fire(
-          'Supprimé !',
-          'Le produit a été supprimé avec succès.',
-          'success'
-        );
-      }
-
-    } catch (error) {
-      console.error('Erreur lors de la suppression :', error);
-      Swal.fire(
-        'Erreur',
-        "Une erreur s'est produite lors de la suppression.",
-        'error'
-      );
-    }
-  };
-
-  const handleTabClick = (tab) => setActiveTab(tab);
+  }, [product?.endDate]);
 
   const handleSubmitBid = async (e) => {
     e.preventDefault();
 
-    if (bidAmount <= 0) {
-      alert("Le montant de l'enchère doit être supérieur à 0");
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) {
+      Swal.fire("Error", "You must be logged in to place a bid", "error");
       return;
     }
 
-    const currentDate = new Date().toISOString();
+    if (!bidAmount || bidAmount <= 0) {
+      Swal.fire("Error", "Please enter a valid bid amount", "error");
+      return;
+    }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/offres`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          montant: bidAmount,
-          poste_id: product.id,
-          
-        }),
+      // Submit new bid
+      const response = await axios.post(`http://localhost:8000/api/offres`, {
+        montant: parseFloat(bidAmount),
+        poste_id: id,
+        user_id: userId
       });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de la soumission de l'offre");
-      }
-
-      const newBid = await response.json();
-      setAuctionHistory((prev) => [...prev, newBid]);
+      // OPTION 1: Update state immediately with the response
+      setAuctionHistory(prev => [...prev, response.data]);
       setBidAmount("");
-    } catch (err) {
-      console.error("Erreur lors de la soumission de l'offre:", err);
+      Swal.fire("Success", "Your bid has been placed!", "success");
+
+      // OPTION 2: Or refresh the entire auction history
+      // const historyRes = await fetch(`http://localhost:8000/api/offres/poste/${id}`);
+      // if (historyRes.ok) {
+      //   const historyData = await historyRes.json();
+      //   setAuctionHistory(historyData);
+      //   setBidAmount("");
+      //   Swal.fire("Success", "Your bid has been placed!", "success");
+      // }
+
+    } catch (error) {
+      console.error("Bid submission error:", error);
+      Swal.fire("Error", error.response?.data?.message || "Failed to place bid", "error");
+    }
+  };
+  const handleDeleteBid = async (bidId) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Confirm Delete',
+        text: 'Are you sure you want to delete this bid?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Delete'
+      });
+
+      if (result.isConfirmed) {
+        await axios.delete(`http://localhost:8000/api/offres/${bidId}`);
+        setAuctionHistory(prev => prev.filter(bid => bid.id !== bidId));
+        Swal.fire("Deleted!", "Your bid has been removed", "success");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      Swal.fire("Error", "Failed to delete bid", "error");
     }
   };
 
- 
-  
-const handleSubmitOffer = async (e) => {
-  e.preventDefault();
-  if (!bidAmount || !offerDescription) {
-    alert("Veuillez remplir tous les champs pour l'offre.");
-    return;
-  }
+  const handleUpdateBid = async (bidId) => {
+    try {
+      await axios.put(`http://localhost:8000/api/offres/${bidId}`, {
+        montant: parseFloat(editMontant)
+      });
 
-  try {
-    const response = await axios.post(`http://localhost:8000/api/offres`, {
-      montant: bidAmount,
-      poste_id: product.id,
-    });
-
-    if (response.data) {
-      Swal.fire("Offre ajoutée !", "Votre offre a été ajoutée avec succès.", "success");
-      setBidAmount(""); // Réinitialiser le champ montant
-      setOfferDescription(""); // Réinitialiser la date
+      setAuctionHistory(prev =>
+        prev.map(bid => bid.id === bidId ? { ...bid, montant: editMontant } : bid)
+      );
+      setEditBid(null);
+      Swal.fire("Updated!", "Your bid has been updated", "success");
+    } catch (error) {
+      console.error("Update error:", error);
+      Swal.fire("Error", "Failed to update bid", "error");
     }
-  } catch (error) {
-    console.error("Erreur lors de l'ajout de l'offre:", error);
-    Swal.fire("Erreur", "Une erreur s'est produite lors de l'ajout de l'offre.", "error");
-  }
-};
+  };
 
-const handleDeleteBid = async (bidId) => {
-  try {
-    const result = await Swal.fire({
-      title: 'Êtes-vous sûr ?',
-      text: 'Cette offre sera supprimée.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Oui, supprimer',
-      cancelButtonText: 'Annuler',
-    });
-
-    if (result.isConfirmed) {
-      await axios.delete(`http://localhost:8000/api/offres/${bidId}`);
-      setAuctionHistory((prev) => prev.filter((bid) => bid.id !== bidId));
-      Swal.fire('Supprimé !', 'L\'offre a été supprimée.', 'success');
-    }
-  } catch (error) {
-    console.error("Erreur suppression:", error);
-    Swal.fire('Erreur', 'Suppression échouée.', 'error');
-  }
-};
-
-const handleUpdateBid = async (bidId) => {
-  try {
-    await axios.put(`http://localhost:8000/api/offres/${bidId}`, {
-      montant: editMontant,
-    });
-
-    setAuctionHistory((prev) =>
-      prev.map((bid) =>
-        bid.id === bidId ? { ...bid, montant: editMontant } : bid
-      )
-    );
-    setEditBid(null);
-    Swal.fire('Modifié !', 'L\'offre a été mise à jour.', 'success');
-  } catch (error) {
-    console.error("Erreur modification:", error);
-    Swal.fire('Erreur', 'Modification échouée.', 'error');
-  }
-};
-const [editBid, setEditBid] = useState(null);
-const [editMontant, setEditMontant] = useState("");
   const getCurrentBid = () => {
-    if (auctionHistory.length > 0) {
-      return auctionHistory[auctionHistory.length - 1].montant;
-    }
-    return product?.prixIniale ?? 0;
-  };
+    if (!product) return product?.prixIniale || 0;
 
-  if (loading) return <div>Chargement...</div>;
-  if (error) return <div>Erreur : {error}</div>;
-  if (!product) return <div>Aucun produit trouvé.</div>;
+    // Find the highest bid amount
+    const highestBid = auctionHistory.reduce((max, bid) =>
+      bid.montant > max ? bid.montant : max,
+      product.prixIniale || 0
+    );
+
+    return highestBid;
+  };
+  if (loading) return <div className="text-center py-20">Loading product details...</div>;
+  if (error) return <div className="text-center py-20 text-red-500">Error: {error}</div>;
+  if (!product) return <div className="text-center py-20">Product not found</div>;
 
   return (
-    <section className="pt-24 px-8">
+    <section className="pt-24 px-8 pb-12">
       <Container>
-        <div className="flex justify-between gap-8">
-          <div className="w-1/2">
-            <div className="h-[70vh]">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Product Image */}
+          <div className="lg:w-1/2">
+            <div className="h-[60vh] rounded-xl overflow-hidden bg-gray-100">
               <img
-                src={product.photos || "https://via.placeholder.com/300"}
+                src={product.photos || "https://via.placeholder.com/600x800"}
                 alt={product.titre}
-                className="w-full h-full object-cover rounded-xl"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
 
-          <div className="w-1/2">
+          {/* Product Details */}
+          <div className="lg:w-1/2 space-y-6">
             <Title level={2} className="capitalize">{product.titre}</Title>
 
-            <div className="flex gap-5 my-2">
-              <div className="flex text-green">
+            <div className="flex items-center gap-4">
+              <div className="flex text-yellow-400">
                 <IoIosStar size={20} />
                 <IoIosStar size={20} />
                 <IoIosStar size={20} />
@@ -255,204 +210,238 @@ const [editMontant, setEditMontant] = useState("");
 
             <Body>{product.description}</Body>
 
-            <div className="mt-4 space-y-2">
-              <Caption>Item condition: New</Caption>
-              <Caption>Item Verified: Yes</Caption>
-            </div>
-
-            <div className="flex gap-8 text-center my-4">
-              {[timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds].map((val, i) => (
-                <div key={i} className="p-5 px-10 shadow-s1">
-                  <Title level={4}>{val}</Title>
-                  <Caption>{["Days", "Hours", "Minutes", "Seconds"][i]}</Caption>
+            {/* Auction Timer */}
+            {product.endDate ? (
+              <>
+                <div className="grid grid-cols-4 gap-4 my-6">
+                  {Object.entries(timeLeft).map(([unit, value]) => (
+                    <div key={unit} className="text-center p-4 shadow-md rounded-lg">
+                      <Title level={3}>{value}</Title>
+                      <Caption className="capitalize">{unit}</Caption>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <Title level={4}>
+                  Auction ends: <span className="font-normal">{new Date(product.endDate).toLocaleString()}</span>
+                </Title>
+              </>
+            ) : (
+              <div className="bg-yellow-50 text-yellow-700 p-4 rounded-lg">
+                <Title level={4}>No auction end date specified</Title>
+              </div>
+            )}
+
+            {/* Pricing */}
+            <div className="space-y-2">
+              <Title level={4}>
+                Starting Price: <span className="font-normal">${product.prixIniale}</span>
+              </Title>
+              <Title level={3} className="text-green-600">
+                Current Highest Bid: <span className="font-normal">${getCurrentBid()}</span>
+              </Title>
+              {auctionHistory.length > 0 && (
+                <Caption className="text-gray-500">
+                  {auctionHistory.length} bids placed
+                </Caption>
+              )}
             </div>
 
-            <Title className="my-2">
-              Auction ends: <Caption>{new Date(product.duree).toLocaleString()}</Caption>
-            </Title>
-
-            <Title className="my-2">Price: <Caption>${product.prixIniale}</Caption></Title>
-            <Title className="my-2 text-3xl">Current bid: <Caption>${getCurrentBid()}</Caption></Title>
-            
+            {/* Bid Form */}
+            <form onSubmit={handleSubmitBid} className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="bidAmount" className="block mb-2 font-medium">
+                  Enter Your Bid ($)
+                </label>
+                <input
+                  type="number"
+                  id="bidAmount"
+                  min={getCurrentBid() + 1}
+                  step="0.01"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  className={`${commonClassNameOfInput} w-full`}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition w-full"
+              >
+                Place Bid
+              </button>
+            </form>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="details mt-10">
-          <div className="flex items-center gap-5 mb-6">
-            {["description", "auctionHistory", "reviews", "moreProducts"].map((tab) => (
+        <div className="mt-12">
+          <div className="flex overflow-x-auto gap-2 mb-6 pb-2">
+            {["description", "auctionHistory", "reviews"].map((tab) => (
               <button
                 key={tab}
-                className={`rounded-md px-10 py-4 text-black shadow-s3 ${activeTab === tab ? "bg-green text-white" : "bg-white"}`}
-                onClick={() => handleTabClick(tab)}
+                className={`px-6 py-3 rounded-md whitespace-nowrap ${activeTab === tab
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-gray-700 shadow-sm"
+                  }`}
+                onClick={() => setActiveTab(tab)}
               >
-                {tab === "description"
-                  ? "Description"
-                  : tab === "auctionHistory"
-                  ? "Auction History"
-                  : tab === "reviews"
-                  ? "Reviews (2)"
-                  : "More Products"}
+                {tab === "description" && "Description"}
+                {tab === "auctionHistory" && "Bid History"}
+                {tab === "reviews" && "Reviews"}
               </button>
             ))}
           </div>
 
-          <div className="tab-content shadow-s3 p-8 rounded-md">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
             {activeTab === "description" && (
-              <>
-                <Title level={4}>Description</Title>
-                <br />
-                <Caption>{product.description}</Caption>
-              </>
+              <div>
+                <Title level={4} className="mb-4">Product Description</Title>
+                <Body>{product.description}</Body>
+              </div>
             )}
 
             {activeTab === "auctionHistory" && (
-              <>
-                <Title level={4} className="mb-4">Auction History</Title>
+              <div>
+                <Title level={4} className="mb-4">Bid History</Title>
                 {auctionHistory.length === 0 ? (
-                  <Caption>No history available.</Caption>
+                  <Caption>No bids have been placed yet</Caption>
                 ) : (
-                  <table className="w-full border border-gray-200 text-left text-sm">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="px-4 py-2 border">Date</th>
-                        <th className="px-4 py-2 border">Bid Amount (USD)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-  {auctionHistory.map((bid, index) => (
-    <tr key={index}>
-      <td className="px-4 py-2 border">{bid.dateEnchere}</td>
-      <td className="px-4 py-2 border">
-        {editBid === bid.id ? (
-          <input
-            type="number"
-            value={editMontant}
-            onChange={(e) => setEditMontant(e.target.value)}
-            className="border p-1 rounded"
-          />
-        ) : (
-          `$${bid.montant}`
-        )}
-      </td>
-      <td className="px-4 py-2 border space-x-2">
-        {editBid === bid.id ? (
-          <>
-            <button
-              onClick={() => handleUpdateBid(bid.id)}
-              className="bg-green text-white px-6 py-2 rounded-md hover:bg-darkGreen transition"
-            >
-              Sauvegarder
-            </button>
-            <button
-              onClick={() => setEditBid(null)}
-              className="bg-green text-white px-6 py-2 rounded-md hover:bg-darkGreen transition"
-            >
-              Annuler
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => {
-                setEditBid(bid.id);
-                setEditMontant(bid.montant);
-              }}
-              className="bg-green text-white px-6 py-2 rounded-md hover:bg-darkGreen transition"
-            >
-              Update
-            </button>
-            <button
-              onClick={() => handleDeleteBid(bid.id)}
-              className="bg-green text-white px-6 py-2 rounded-md hover:bg-darkGreen transition"
-            >
-              Delete
-            </button>
-          </>
-        )}
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-4 py-3 text-left border-b">Date</th>
+                          <th className="px-4 py-3 text-left border-b">Bidder</th>
+                          <th className="px-4 py-3 text-left border-b">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {auctionHistory.map((bid) => (
+                          <tr key={bid.id} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3 text-gray-700">
+                              {new Date(bid.dateEnchere).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              Anonymous
+                            </td>
+                            <td className="px-4 py-3 font-medium text-green-600">
+                              ${bid.montant}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
-              </>
+              </div>
             )}
-
             {activeTab === "reviews" && (
-              <>
-                <Title level={4}>Customer Reviews</Title>
-                <Caption>★★★★☆ (4/5)</Caption>
-                <p>Good product overall. Would recommend!</p>
-              </>
-            )}
-
-            {activeTab === "moreProducts" && (
-              <>
-                <Title level={4}>More Products</Title>
-                <Caption>Other similar products go here.</Caption>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Bid Form */}
-        {product.enchere && (
-          <div className="mt-8">
-             <form onSubmit={handleSubmitOffer} className="mt-4 space-y-4">
-    <div>
-      <label htmlFor="montant" className="block mb-1 font-medium text-gray-700">
-        Montant de l’offre ($)
-      </label>
-      <input
-        type="number"
-        id="montant"
-        value={bidAmount}
-        onChange={(e) => setBidAmount(e.target.value)}
-        className={commonClassNameOfInput}
-        required
-      />
+  <div className="space-y-6">
+    {/* Rating Summary */}
+    <div className="flex items-center mb-4">
+      <div className="flex text-yellow-400 mr-2">
+        <IoIosStar size={20} />
+        <IoIosStar size={20} />
+        <IoIosStar size={20} />
+        <IoIosStarHalf size={20} />
+        <IoIosStarOutline size={20} />
+      </div>
+      <Caption>4.2 stars (12 reviews)</Caption>
     </div>
-    
-    <button
-      type="submit"
-      className="bg-green text-white px-6 py-2 rounded hover:bg-darkGreen transition"
-    >
-      Soumettre l'offre
-    </button>
-  </form>
+
+    {/* Static Reviews */}
+    <div className="space-y-4">
+      {/* Review 1 */}
+      <div className="border-b pb-4">
+        <div className="flex justify-between">
+          <div className="flex text-yellow-400 mb-1">
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
           </div>
-        )}
+          <Caption className="text-gray-500">May 15, 2023</Caption>
+        </div>
+        <Body className="text-gray-700 mb-1">"Perfect product, exceeded my expectations!"</Body>
+        <Caption className="text-gray-500">- Alex</Caption>
+      </div>
 
-        {/* Offer Form */}
-        <div className="mt-8">
-          {/* Formulaire pour soumettre une nouvelle offre */}
-<form onSubmit={handleSubmitOffer} className="mt-6 space-y-4">
-  <div>
-    <label htmlFor="montant" className="block text-sm font-medium text-gray-700">Montant de l'offre (USD)</label>
-    <input
-      type="number"
-      id="montant"
-      value={bidAmount}
-      onChange={(e) => setBidAmount(e.target.value)}
-      className={commonClassNameOfInput}
-      required
-    />
+      {/* Review 2 */}
+      <div className="border-b pb-4">
+        <div className="flex justify-between">
+          <div className="flex text-yellow-400 mb-1">
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStarOutline size={16} />
+          </div>
+          <Caption className="text-gray-500">April 28, 2023</Caption>
+        </div>
+        <Body className="text-gray-700 mb-1">"Good value for the price, works well"</Body>
+        <Caption className="text-gray-500">- Sarah</Caption>
+      </div>
+
+{/* Review 3 */}
+<div className="border-b pb-4">
+        <div className="flex justify-between">
+          <div className="flex text-yellow-400 mb-1">
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStar size={16} />
+            <IoIosStarHalf size={16} />
+            <IoIosStarOutline size={16} />
+          </div>
+          <Caption className="text-gray-500">April 10, 2023</Caption>
+        </div>
+        <Body className="text-gray-700 mb-1">"Does what it needs to do"</Body>
+        <Caption className="text-gray-500">- Michael</Caption>
+      </div>
+    </div>
+
+    {/* Static "Your Review" - Appears after clicking stars */}
+    <div className="border-t pt-4">
+      <div className="flex justify-between">
+        <div className="flex text-yellow-400 mb-1">
+          <IoIosStar size={16} />
+          <IoIosStar size={16} />
+          <IoIosStar size={16} />
+          <IoIosStar size={16} />
+          <IoIosStarOutline size={16} />
+        </div>
+        <Caption className="text-gray-500">Just now</Caption>
+      </div>
+      <Body className="text-gray-700 mb-1">"I love this product! Works perfectly for my needs."</Body>
+      <Caption className="text-gray-500">- You</Caption>
+    </div>
+
+    {/* Static Add Comment UI */}
+    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <Title level={5} className="mb-2">Click stars to rate</Title>
+      <div className="flex text-gray-300 mb-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <IoIosStarOutline 
+            key={star} 
+            size={24} 
+            className="cursor-pointer hover:text-yellow-400" 
+            onClick={() => {
+              // This would be interactive in a real app
+              Swal.fire({
+                title: 'Review Submitted!',
+                text: 'Your review would be saved in a real application',
+                icon: 'success',
+                confirmButtonText: 'OK'
+              });
+            }}
+          />
+        ))}
+      </div>
+      <Caption>Add your  comment below</Caption>
+    </div>
   </div>
-
-  
-
-  <button
-    type="submit"
-    className="bg-green text-white px-6 py-2 rounded-md hover:bg-darkGreen transition"
-  >
-    Soumettre l'offre
-  </button>
-</form>
-
+)}
+          </div>
         </div>
       </Container>
     </section>

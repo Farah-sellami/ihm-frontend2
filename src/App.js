@@ -26,6 +26,7 @@ import {
   WinningBidList,
   Favorites
 } from "./router/index.js";  
+import AddPosteForm from "./components/common/AddPosteForm";
 
 // Utilisation des composants importés dans ton code
 
@@ -46,6 +47,14 @@ function App() {
               </Layout>
             }
           />
+          <Route
+              path="/create-auction"
+              element={
+                <Layout>
+                  <AddPosteForm />
+                </Layout>
+              }
+            />
              <Route
             path="/Auctions"
             element={

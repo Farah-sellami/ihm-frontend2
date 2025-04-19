@@ -4,11 +4,13 @@ import { ProductList } from "../../components/hero/ProductList";
 export const Home = () => {
   return (
     <>
+      <br /> <br />
       
-      <CategorySlider />
       <Hero />
-      <Process />
+      <CategorySlider />
       <ProductList />
+      <Process />
+     
       {/* <TopSeller /> */}
      
       {/* <Trust /> */}

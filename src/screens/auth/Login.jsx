@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { FaFacebook, FaGoogle } from "react-icons/fa";
 import { Caption, Container, CustomNavLink, PrimaryButton, Title } from "../../router";
 import { commonClassNameOfInput } from "../../components/common/Design";
-import authService from "../../api/authService";
-import { Link } from "react-router-dom";
-
-
 
 export const Login = () => {
   const [formValues, setFormValues] = useState({
@@ -13,8 +11,10 @@ export const Login = () => {
     motDePasse: "",
   });
 
-  const [error, setError] = useState(null);  // Pour gérer les erreurs
-  const navigate = useNavigate();  // Pour rediriger l'utilisateur
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const API_URL = "http://127.0.0.1:8000/api";
 
   const handleChange = (e) => {
     setFormValues({ ...formValues, [e.target.name]: e.target.value });
@@ -22,23 +22,36 @@ export const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError(null);
+  
     try {
-      const data = await authService.login(formValues);
-      console.log("Success:", data);
+      const response = await axios.post(`${API_URL}/login`, formValues);
+  
+      const { token, user } = response.data;
+  
+      // Save to storage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      if (user.role !== undefined) {
+        sessionStorage.setItem("userRole", user.role);
+        sessionStorage.setItem("userId", user.id);
 
-      // Récupérer les infos utilisateur (par exemple depuis localStorage ou authService)
-      const currentUser = authService.getAuthenticatedUser();
-
-      if (currentUser.role === 0) {
+      }
+  
+      // Role-based redirect
+      if (user.role === "0" || user.role === 0) {
         navigate("/dashboard");
+      } else if (user.role === "1" || user.role === 1) {
+        window.location.href = "http://localhost:3000"; // hard reload to home
       } else {
-        navigate("/Auctions");
+        navigate("/Auctions"); // fallback
       }
     } catch (err) {
-      setError(err.message || "Login failed");
+      const errorMessage = err.response?.data?.error || "Identifiants invalides";
+      setError(errorMessage);
     }
   };
+  
 
   return (
     <>
@@ -47,25 +60,16 @@ export const Login = () => {
         <div className="bg-[#241C37] pt-8 h-[40vh] relative content">
           <Container>
             <div>
-              <Title level={3} className="text-white">
-                Log In
-              </Title>
+              <Title level={3} className="text-white">Log In</Title>
               <div className="flex items-center gap-3">
-              <Link to="/" className="text-white font-normal text-xl" onClick={() => console.log("clicked")}>
-  Home
-</Link>
-
-
-                <Title level={5} className="text-white font-normal text-xl">
-                  /
-                </Title>
-                <Title level={5} className="text-white font-normal text-xl">
-                  Log In
-                </Title>
+                <Title level={5} className="text-white font-normal text-xl">Home</Title>
+                <Title level={5} className="text-white font-normal text-xl">/</Title>
+                <Title level={5} className="text-white font-normal text-xl">Log In</Title>
               </div>
             </div>
           </Container>
         </div>
+
         <form onSubmit={handleSubmit} className="bg-white shadow-s3 w-1/3 m-auto my-16 p-8 rounded-xl">
           <div className="text-center">
             <Title level={5}>New Member</Title>
@@ -74,7 +78,6 @@ export const Login = () => {
             </p>
           </div>
 
-          {/* Affichage des erreurs si elles existent */}
           {error && (
             <div className="text-red-500 text-center mb-4">{error}</div>
           )}
@@ -106,16 +109,16 @@ export const Login = () => {
           </div>
 
           <div className="flex items-center gap-2 py-4">
-            {/* <input type="checkbox" /> */}
-            {/* <Caption>I agree to the Terms & Policy</Caption> */}
+            <input type="checkbox" />
+            <Caption>I agree to the Terms & Policy</Caption>
           </div>
 
           <PrimaryButton className="w-full rounded-none my-5">LOGIN</PrimaryButton>
 
           <p className="text-center mt-5">
-            {/* By clicking the signup button, you create a Cobiro account, and you agree to Cobiro's{" "} */}
-            {/* <span className="text-green underline">Terms & Conditions</span> &{" "} */}
-            {/* <span className="text-green underline">Privacy Policy</span>. */}
+            By clicking the signup button, you create a Cobiro account, and you agree to Cobiro's{" "}
+            <span className="text-green underline">Terms & Conditions</span> &{" "}
+            <span className="text-green underline">Privacy Policy</span>.
           </p>
         </form>
 

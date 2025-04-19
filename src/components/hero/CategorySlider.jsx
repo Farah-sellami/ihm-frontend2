@@ -96,7 +96,9 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
   };
 
   return (
+   
     <section className="category-slider pb-16 bg-gray-100">
+      <br />
       <Container>
         {/* Search Box */}
         <div className="mb-6 relative w-1/2">
@@ -114,7 +116,7 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
         </div>
 
         {/* Heading */}
-        <Heading title="Browse the categories" subtitle="Most viewed and all-time top-selling category" />
+        <Heading title="Browse the categories" subtitle="Most viewed and Popular Categories" />
 
         {/* Arrows */}
         <div className="relative">

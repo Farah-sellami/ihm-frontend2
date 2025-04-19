@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Container, Heading } from "../../router";
 import axios from "axios";
 import { ProductCard } from "../cards/ProductCard";
+import { Link } from "react-router-dom"; // Importer Link de react-router-dom pour gérer la navigation
 
 export const ProductList = ({ selectedSubcategory, priceRange }) => {
   const [postes, setPostes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [scategories, setScategories] = useState([]);
-
+  const [filteredPostes, setFilteredPostes] = useState([]); // State to hold filtered postes
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedScategory, setSelectedScategory] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
 
   // Charger les catégories au démarrage
   useEffect(() => {
@@ -58,6 +60,7 @@ export const ProductList = ({ selectedSubcategory, priceRange }) => {
 
         const response = await axios.get(endpoint);
         setPostes(response.data);
+        setFilteredPostes(response.data); // Set filteredPostes to all postes initially
       } catch (error) {
         console.error("Erreur lors du chargement des postes :", error.message);
       }
@@ -66,13 +69,39 @@ export const ProductList = ({ selectedSubcategory, priceRange }) => {
     fetchPostes();
   }, [selectedCategory, selectedScategory, selectedSubcategory, priceRange]);
 
+  // Filter posts based on search term
+  const handleSearch = () => {
+    const filtered = postes.filter((poste) =>
+      poste.titre.toLowerCase().includes(searchTerm.toLowerCase()) || // Filter by title
+      poste.description.toLowerCase().includes(searchTerm.toLowerCase()) // Filter by description
+    );
+    setFilteredPostes(filtered); // Set the filtered postes based on the search term
+  };
+
   return (
     <section className="product-home">
       <Container>
         <Heading
-          title="Nos Postes"
+          title="Featured Auctions"
           subtitle="Explorez les postes disponibles avec nos magnifiques offres."
         />
+
+        {/* Search Bar */}
+        <div className="mb-6 relative w-1/2">
+          <input
+            type="text"
+            placeholder="Search postes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+          <button 
+            onClick={handleSearch} 
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm transition"
+          >
+            Search
+          </button>
+        </div>
 
         {/* Filtres */}
         <div className="flex flex-wrap gap-4 my-4">
@@ -103,13 +132,20 @@ export const ProductList = ({ selectedSubcategory, priceRange }) => {
 
         {/* Postes */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 my-8">
-          {postes.length > 0 ? (
-            postes.map((item) => (
+          {filteredPostes.length > 0 ? (
+            filteredPostes.map((item) => (
               <ProductCard item={item} key={item.id} />
             ))
           ) : (
             <p>Aucun poste trouvé.</p>
           )}
+        </div>
+
+        {/* View All Link */}
+        <div className="text-center mt-6">
+          <Link to="/" className="text-orange-500 hover:text-orange-600 font-semibold">
+            View All
+          </Link>
         </div>
       </Container>
     </section>

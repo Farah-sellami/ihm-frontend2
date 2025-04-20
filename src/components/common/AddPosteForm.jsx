@@ -95,6 +95,10 @@ const AddPosteForm = () => {
         estApprouvé: 1,
         scategorieID: '',
       });
+
+      // NEW: Redirect to the details page of the newly created post
+      window.location.href = `/auctions`;
+      
     } catch (err) {
       console.error("Error creating post:", err.response?.data || err.message);
       alert("Error creating post. Please try again.");
@@ -190,7 +194,7 @@ const AddPosteForm = () => {
         type="submit"
         className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
       >
-        Create Post
+        Create Auction
       </button>
     </form>
   );

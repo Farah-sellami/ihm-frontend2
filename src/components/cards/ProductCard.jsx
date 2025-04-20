@@ -66,15 +66,15 @@ export const ProductCard = ({ item }) => {
       <div className="h-56 relative overflow-hidden">
         <NavLink to={`/details/${item.id}`}>
           <img
-            src={item.photos}
+            src={item.photos[0]}
             alt={item.titre}
             className="w-full h-full object-cover rounded-xl hover:scale-105 hover:cursor-pointer transition-transform duration-300 ease-in-out"
           />
         </NavLink>
 
-        <ProfileCard className="shadow-s1 absolute right-3 bottom-3">
+        {/* <ProfileCard className="shadow-s1 absolute right-3 bottom-3">
           <RiAuctionFill size={22} className="text-green" />
-        </ProfileCard>
+        </ProfileCard> */}
 
         <div className="absolute top-0 left-0 p-2 w-full">
           <div className="flex items-center justify-between">
@@ -82,9 +82,9 @@ export const ProductCard = ({ item }) => {
               <Caption className="text-blue-500 bg-white px-3 py-1 text-sm rounded-full">
                 {remainingTime}
               </Caption>
-              <Caption className="text-green bg-green_100 px-3 py-1 text-sm rounded-full">
+              {/* <Caption className="text-green bg-green_100 px-3 py-1 text-sm rounded-full">
                 {item.estApprouvé ? "Approuvé" : "Non approuvé"}
-              </Caption>
+              </Caption> */}
             </div>
           </div>
         </div>

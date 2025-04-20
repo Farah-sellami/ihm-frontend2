@@ -17,7 +17,7 @@ export const ProductsDetailsPage = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [editBid, setEditBid] = useState(null);
   const [editMontant, setEditMontant] = useState("");
-
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   // Fetch product and auction history
   useEffect(() => {
     const fetchData = async () => {
@@ -82,131 +82,157 @@ export const ProductsDetailsPage = () => {
     return () => clearInterval(timer);
   }, [product?.endDate]);
 
+  // Submit Bid
   const handleSubmitBid = async (e) => {
     e.preventDefault();
-
     const userId = sessionStorage.getItem('userId');
+    const numericBid = parseFloat(bidAmount);
+
     if (!userId) {
-      Swal.fire("Error", "You must be logged in to place a bid", "error");
-      return;
+      return Swal.fire("Error", "You must be logged in to place a bid", "error");
     }
 
-    if (!bidAmount || bidAmount <= 0) {
-      Swal.fire("Error", "Please enter a valid bid amount", "error");
-      return;
+    if (!bidAmount || numericBid <= 0) {
+      return Swal.fire("Error", "Please enter a valid bid amount", "error");
+    }
+
+    const minBid = calculateMinimumBid();
+    if (numericBid < minBid) {
+      return Swal.fire("Bid Too Low", `Your bid must be at least 10% higher than current ($${minBid.toFixed(2)})`, "error");
     }
 
     try {
-      // Submit new bid
-      const response = await axios.post(`http://localhost:8000/api/offres`, {
-        montant: parseFloat(bidAmount),
+      const res = await axios.post(`http://localhost:8000/api/offres`, {
+        montant: numericBid,
         poste_id: id,
         user_id: userId
       });
-
-      // OPTION 1: Update state immediately with the response
-      setAuctionHistory(prev => [...prev, response.data]);
+      setAuctionHistory(prev => [...prev, res.data]);
       setBidAmount("");
       Swal.fire("Success", "Your bid has been placed!", "success");
-
-      // OPTION 2: Or refresh the entire auction history
-      // const historyRes = await fetch(`http://localhost:8000/api/offres/poste/${id}`);
-      // if (historyRes.ok) {
-      //   const historyData = await historyRes.json();
-      //   setAuctionHistory(historyData);
-      //   setBidAmount("");
-      //   Swal.fire("Success", "Your bid has been placed!", "success");
-      // }
-
-    } catch (error) {
-      console.error("Bid submission error:", error);
-      Swal.fire("Error", error.response?.data?.message || "Failed to place bid", "error");
-    }
-  };
-  const handleDeleteBid = async (bidId) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Confirm Delete',
-        text: 'Are you sure you want to delete this bid?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Delete'
-      });
-
-      if (result.isConfirmed) {
-        await axios.delete(`http://localhost:8000/api/offres/${bidId}`);
-        setAuctionHistory(prev => prev.filter(bid => bid.id !== bidId));
-        Swal.fire("Deleted!", "Your bid has been removed", "success");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      Swal.fire("Error", "Failed to delete bid", "error");
+    } catch (err) {
+      Swal.fire("Error", err.response?.data?.message || "Failed to place bid", "error");
     }
   };
 
-  const handleUpdateBid = async (bidId) => {
-    try {
-      await axios.put(`http://localhost:8000/api/offres/${bidId}`, {
-        montant: parseFloat(editMontant)
-      });
 
-      setAuctionHistory(prev =>
-        prev.map(bid => bid.id === bidId ? { ...bid, montant: editMontant } : bid)
-      );
-      setEditBid(null);
-      Swal.fire("Updated!", "Your bid has been updated", "success");
-    } catch (error) {
-      console.error("Update error:", error);
-      Swal.fire("Error", "Failed to update bid", "error");
-    }
-  };
+  // const getCurrentBid = () => {
+  //   if (!product) return product?.prixIniale || 0;
 
+  //   // Find the highest bid amount
+  //   const highestBid = auctionHistory.reduce((max, bid) =>
+  //     bid.montant > max ? bid.montant : max,
+  //     product.prixIniale || 0
+  //   );
+
+  //   return highestBid;
+  // };
   const getCurrentBid = () => {
-    if (!product) return product?.prixIniale || 0;
-
-    // Find the highest bid amount
-    const highestBid = auctionHistory.reduce((max, bid) =>
-      bid.montant > max ? bid.montant : max,
-      product.prixIniale || 0
-    );
-
-    return highestBid;
+    if (!product) return 0;
+    return auctionHistory.reduce((max, bid) => bid.montant > max ? bid.montant : max, product.prixIniale || 0);
   };
+
+  const calculateMinimumBid = () => {
+    const current = getCurrentBid();
+    return current * 1.1; // 10% increase
+  };
+
   if (loading) return <div className="text-center py-20">Loading product details...</div>;
   if (error) return <div className="text-center py-20 text-red-500">Error: {error}</div>;
   if (!product) return <div className="text-center py-20">Product not found</div>;
 
   return (
-    <section className="pt-24 px-8 pb-12">
-              <div className="bg-[#241C37] pt-8 h-[40vh] relative content">
-          <Container>
-            <div>
-              <Title level={3} className="text-white">Details</Title>
-              <div className="flex items-center gap-3">
-                <Title level={5} className="text-white font-normal text-xl">Home</Title>
-                <Title level={5} className="text-white font-normal text-xl">/</Title>
-                <Title level={5} className="text-white font-normal text-xl">Auctions In</Title>
-                <Title level={5} className="text-white font-normal text-xl">/</Title>
-                <Title level={5} className="text-white font-normal text-xl">Details</Title>
-
-              </div>
-            </div>
-          </Container>
+    <>
+    <div className="bg-[#20354c] pt-8 min-h-[200px] relative">
+            
+    <Container className="px-4 sm:px-6 lg:px-8">
+    <br />   <br />   <br />
+    <div className="space-y-4">
+        <Title level={3} className="text-white text-2xl sm:text-3xl">
+          Details
+        </Title>
+        <div className="flex items-center gap-2 text-sm sm:text-base">
+          <Title level={5} className="text-white font-normal">
+            Home
+          </Title>
+          <span className="text-white">/</span>
+          <Title level={5} className="text-white font-normal">
+            Auctions
+          </Title>
+          <span className="text-white">/</span>
+          <Title level={5} className="text-white font-normal">
+            Details
+          </Title>
         </div>
-        <br />
+      </div>
+
+    </Container>
+  </div>
+    <section className="pt-24 px-8 pb-12">
+   
       <Container>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Product Image */}
-          <div className="lg:w-1/2">
-            <div className="h-[60vh] rounded-xl overflow-hidden bg-gray-100">
+ {/* Image Carousel */}
+ <div className="lg:w-1/2">
+            <div className="h-[60vh] rounded-xl overflow-hidden bg-gray-100 relative">
+              {/* Main Image */}
               <img
-                src={product.photos || "https://via.placeholder.com/600x800"}
+                src={product.photos[currentImageIndex] || "https://via.placeholder.com/600x800"}
                 alt={product.titre}
                 className="w-full h-full object-contain"
               />
+
+              {/* Navigation Arrows (only show if multiple images exist) */}
+              {product.photos.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentImageIndex(prev =>
+                      prev === 0 ? product.photos.length - 1 : prev - 1
+                    )}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition"
+                  >
+                    &lt;
+                  </button>
+                  <button
+                    onClick={() => setCurrentImageIndex(prev =>
+                      prev === product.photos.length - 1 ? 0 : prev + 1
+                    )}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition"
+                  >
+                    &gt;
+                  </button>
+                </>
+              )}
+
+              {/* Image Indicator Dots */}
+              {product.photos.length > 1 && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                  {product.photos.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-3 h-3 rounded-full ${currentImageIndex === index ? 'bg-white' : 'bg-white bg-opacity-50'}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Thumbnail Preview (optional) */}
+            {product.photos.length > 1 && (
+              <div className="flex gap-2 mt-4 overflow-x-auto py-2">
+                {product.photos.map((photo, index) => (
+                  <img
+                    key={index}
+                    src={photo}
+                    alt={`Thumbnail ${index + 1}`}
+                    className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${currentImageIndex === index ? 'border-blue-500' : 'border-transparent'}`}
+                    onClick={() => setCurrentImageIndex(index)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Details */}
@@ -255,6 +281,9 @@ export const ProductsDetailsPage = () => {
               <Title level={3} className="text-green-600">
                 Current Highest Bid: <span className="font-normal">${getCurrentBid()}</span>
               </Title>
+              <Title level={4} className="minimum-bid-title">
+                Minimum Next Bid: <span className="minimum-bid-value">${calculateMinimumBid().toFixed(2)}</span>
+              </Title>
               {auctionHistory.length > 0 && (
                 <Caption className="text-gray-500">
                   {auctionHistory.length} bids placed
@@ -271,20 +300,27 @@ export const ProductsDetailsPage = () => {
                 <input
                   type="number"
                   id="bidAmount"
-                  min={getCurrentBid() + 1}
+                  min={calculateMinimumBid().toFixed(2)}
                   step="0.01"
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
                   className={`${commonClassNameOfInput} w-full`}
+                  placeholder={`Minimum $${calculateMinimumBid().toFixed(2)}`}
                   required
                 />
+                <p className="mt-1 text-sm text-gray-500">
+                  Must be at least 10% higher than current highest bid
+                </p>
               </div>
               <button
                 type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition w-full"
+                className="text-white font-semibold px-6 py-3 rounded-md shadow transition duration-300 hover:opacity-90"
+                style={{ backgroundColor: 'rgba(32, 53, 76, 1)' }}
               >
                 Place Bid
               </button>
+
+
             </form>
           </div>
         </div>
@@ -461,5 +497,6 @@ export const ProductsDetailsPage = () => {
         </div>
       </Container>
     </section>
+    </>
   );
 };

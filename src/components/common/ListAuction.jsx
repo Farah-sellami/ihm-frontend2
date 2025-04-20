@@ -59,6 +59,7 @@ export const ListAuction = () => {
     <>
       <div className="bg-[#20354c] pt-8 min-h-[200px] relative">
         <Container className="px-4 sm:px-6 lg:px-8">
+        <br />   <br />   <br />
           <div className="space-y-4">
             <Title level={3} className="text-white text-2xl sm:text-3xl">
               Auctions

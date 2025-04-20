@@ -108,18 +108,18 @@ export const Login = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 py-4">
+          {/* <div className="flex items-center gap-2 py-4">
             <input type="checkbox" />
             <Caption>I agree to the Terms & Policy</Caption>
-          </div>
+          </div> */}
 
           <PrimaryButton className="w-full rounded-none my-5">LOGIN</PrimaryButton>
 
-          <p className="text-center mt-5">
+          {/* <p className="text-center mt-5">
             By clicking the signup button, you create a Cobiro account, and you agree to Cobiro's{" "}
             <span className="text-green underline">Terms & Conditions</span> &{" "}
             <span className="text-green underline">Privacy Policy</span>.
-          </p>
+          </p> */}
         </form>
 
         <div className="bg-green w-96 h-96 rounded-full opacity-20 blur-3xl absolute bottom-96 right-0"></div>

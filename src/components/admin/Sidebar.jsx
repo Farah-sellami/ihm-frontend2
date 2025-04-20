@@ -10,6 +10,7 @@ export const Sidebar = () => {
   const [user, setUser] = useState(null); // État pour l'utilisateur
   const location = useLocation();
   const className = "flex items-center gap-3 mb-2 p-4 rounded-full";
+  const User2 ="https://res.cloudinary.com/defx74d1x/image/upload/v1734432363/owmse7hwghoctefzby4v.jpg"
 
   // Récupérer l'utilisateur authentifié à l'aide de AuthService
   useEffect(() => {
@@ -26,7 +27,7 @@ export const Sidebar = () => {
     <section className="sidebar flex flex-col justify-between h-full">
       <div className="profile flex items-center text-center justify-center gap-8 flex-col mb-8">
         {/* Affichage de l'image de l'utilisateur ou image par défaut */}
-        <img src={user?.photoProfil || "/default-profile.jpg"} alt="Profile" className="w-32 h-32 rounded-full object-cover" />
+        <img src={user?.photoProfil || User2} alt="Profile" className="w-32 h-32 rounded-full object-cover" />
         <div>
           {/* Affichage du nom et du CIN de l'utilisateur */}
           <Title className="capitalize">

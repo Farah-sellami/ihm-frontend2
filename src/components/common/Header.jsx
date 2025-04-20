@@ -10,7 +10,7 @@ import {
   CustomNavLinkList,
   ProfileCard,
 } from "../../router";
-import { User1 } from "../hero/Hero";
+// import { User1 } from "../hero/Hero";
 
 export const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +21,8 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const menuRef = useRef(null);
-
+  const User1 = "https://res.cloudinary.com/defx74d1x/image/upload/v1734432121/s3r7xpykurfnng6hhhda.jpg"
+  
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -115,8 +116,8 @@ export const Header = () => {
                   <img
                     src={currentUser?.photoProfil || User1}
                     alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                    
+                    className="w-12 h-12 rounded-full object-cover"                  />
                 </ProfileCard>
               </CustomNavLink>
             )}

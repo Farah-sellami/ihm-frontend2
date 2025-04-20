@@ -14,7 +14,7 @@ const AdminHeader = () => {
   const location = useLocation();
   const menuRef = useRef(null);
   const dropdownRef = useRef(null);
-
+  const User2 ="https://res.cloudinary.com/defx74d1x/image/upload/v1734432363/owmse7hwghoctefzby4v.jpg"
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -109,7 +109,7 @@ const AdminHeader = () => {
                 <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2">
                   <ProfileCard>
                     <img
-                      src={currentUser?.photoProfil }
+                      src={currentUser?.photoProfil || User2 }
                       alt="Profile"
                       className="w-10 h-10 rounded-full object-cover border border-gray-300"
                     />

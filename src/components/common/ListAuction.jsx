@@ -55,11 +55,18 @@ export const ListAuction = () => {
     navigate(`?${queryParams.toString()}`, { replace: true });
   }, [selectedSubcategory, priceFilter, navigate]);
 
+  // Function to reset filters
+  const handleResetFilters = () => {
+    setSelectedSubcategory(null);
+    setPriceFilter([0, 1000]); // Resetting to default price range
+    navigate(`?`); // Resetting query parameters in the URL
+  };
+
   return (
     <>
       <div className="bg-[#20354c] pt-8 min-h-[200px] relative">
         <Container className="px-4 sm:px-6 lg:px-8">
-        <br />   <br />   <br />
+          <br /> <br /> <br />
           <div className="space-y-4">
             <Title level={3} className="text-white text-2xl sm:text-3xl">
               Auctions
@@ -77,6 +84,17 @@ export const ListAuction = () => {
         </Container>
       </div>
       <br /> <br />
+      
+      {/* Button to reset filters and show all posts */}
+      <div className="text-right my-2">
+        <button
+          onClick={handleResetFilters}
+          className="text-blue-600 hover:underline text-sm"
+        >
+          View All
+        </button>
+      </div>
+
       {/* Mobile Filter Button */}
       <div className="lg:hidden sticky top-0 z-10 bg-white shadow-sm p-4">
         <button

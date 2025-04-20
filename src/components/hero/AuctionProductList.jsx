@@ -5,7 +5,12 @@ import { ProductCard } from "../cards/ProductCard";
 import { Pagination } from "@mui/material";
 import { Oval } from "react-loader-spinner";
 
-export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
+export const AuctionProductList = ({
+  selectedSubcategory,
+  priceRange,
+  setSelectedSubcategory,
+  setPriceRange,
+}) => {
   const [postes, setPostes] = useState([]);
   const [filteredPostes, setFilteredPostes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,9 +34,9 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
         setLoading(true);
         const queryParams = new URLSearchParams();
 
-        // On vérifie si une sous-catégorie est sélectionnée
+        // Vérification si une sous-catégorie est sélectionnée
         if (selectedSubcategory) {
-          queryParams.append("scategorie_id", selectedSubcategory); // Ajouter le paramètre de sous-catégorie
+          queryParams.append("scategorie_id", selectedSubcategory);
         }
 
         // Si des prix sont fournis
@@ -40,16 +45,16 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
           queryParams.append("max_price", priceRange[1]);
         }
 
-        // Si aucune sous-catégorie n'est sélectionnée, on appelle "allpostes"
+        // Construire l'URL de l'API en fonction des filtres
         const endpoint =
           selectedSubcategory || priceRange
-            ? `http://localhost:8000/api/postes?${queryParams.toString()}` // Filtres appliqués
-            : `http://localhost:8000/api/allpostes`; // Pas de filtre, on récupère tous les postes
+            ? `http://localhost:8000/api/postes?${queryParams.toString()}`
+            : `http://localhost:8000/api/allpostes`; // Pour récupérer tous les postes
 
         const response = await axios.get(endpoint);
         setPostes(response.data);
         setFilteredPostes(response.data);
-        setCurrentPage(1); // reset to first page on filter change
+        setCurrentPage(1); // Réinitialiser la page à 1 lorsque les filtres changent
       } catch (error) {
         console.error("Erreur lors du chargement des postes :", error.message);
       } finally {
@@ -60,7 +65,7 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
     fetchPostes();
   }, [selectedSubcategory, priceRange]);
 
-  // Recherche
+  // Fonction pour la recherche
   const handleSearch = (searchTerm) => {
     const filtered = postes.filter(
       (poste) =>
@@ -68,7 +73,13 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
         poste.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredPostes(filtered);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1); // Réinitialiser à la première page
+  };
+
+  // Fonction pour réinitialiser les filtres
+  const handleResetFilters = () => {
+    setSelectedSubcategory(null);
+    setPriceRange(null);
   };
 
   return (
@@ -79,11 +90,21 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
           subtitle="Explore the available auctions with our great offers."
         />
 
+        {/* Lien pour réinitialiser les filtres et afficher tous les postes */}
+        {/* <div className="mb-4">
+          <button
+            onClick={handleResetFilters}
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Voir 
+          </button>
+        </div> */}
+<br />
         {/* Search Bar */}
         <div className="mb-6 relative w-1/2">
           <input
             type="text"
-            placeholder="Search postes..."
+            placeholder="Search auctions..."
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
@@ -105,14 +126,14 @@ export const AuctionProductList = ({ selectedSubcategory, priceRange }) => {
           </div>
         ) : (
           <>
-            {/* Postes */}
+            {/* Affichage des postes */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 my-8">
               {currentPosts.length > 0 ? (
                 currentPosts.map((item) => (
                   <ProductCard item={item} key={item.id} />
                 ))
               ) : (
-                <p>Aucun poste trouvé.</p>
+                <p>No Auctions found.</p>
               )}
             </div>
 

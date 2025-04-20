@@ -53,13 +53,13 @@ export const ProductCard = ({ item }) => {
     return () => clearInterval(intervalId);
   }, [item.endDate]);
 
-  if (loading) {
-    return (
-      <div className="bg-white shadow-s1 rounded-xl p-5 flex justify-center items-center h-64">
-        <span className="text-gray-500 text-lg animate-pulse">Chargement...</span>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="bg-white shadow-s1 rounded-xl p-5 flex justify-center items-center h-64">
+  //       <span className="text-gray-500 text-lg animate-pulse">Chargement...</span>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="bg-white shadow-s1 rounded-xl p-3">

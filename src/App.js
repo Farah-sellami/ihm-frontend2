@@ -3,7 +3,7 @@ import {
   AddProduct,
   AdminProductList,
   CategoryList,
- 
+  AuctionProductList,
   Dashboard,
   DashboardLayout,
   Home,
@@ -161,6 +161,18 @@ function App() {
                 <Layout>
                   <DashboardLayout>
                     <ProductList />
+                  </DashboardLayout>
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+                    <Route
+            path="/products"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <DashboardLayout>
+                    <AuctionProductList />
                   </DashboardLayout>
                 </Layout>
               </PrivateRoute>

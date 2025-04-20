@@ -1,27 +1,35 @@
+import PropTypes from "prop-types";
 import { useState, useEffect, useRef } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Container, Heading } from "../../router";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
+// Composant pour une seule carte de catégorie
 const CategoryCard = ({ item, subcategories, onCategoryClick, onSubcategoryClick }) => {
   return (
-    <div className="min-w-[140px] h-[140px] flex-shrink-0 bg-white p-4 border rounded-xl shadow-md hover:shadow-lg cursor-pointer transition duration-200 ease-in-out text-center mx-2 flex flex-col justify-center">
-      <h3 
-        className="text-md font-semibold text-gray-800 mb-2 hover:text-blue-600"
+    <div
+      className="min-w-[160px] h-[200px] flex-shrink-0 bg-white p-6 border rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition duration-300 ease-in-out text-center mx-2 flex flex-col justify-between transform hover:scale-105"
+    >
+      <img
+        src={item.image}
+        alt={item.title}
+        className="w-20 h-20 object-cover rounded-full mb-4 mx-auto"
+      />
+      <h3
+        className="text-lg font-semibold text-gray-800 mb-2 hover:text-blue-600 transition duration-200"
         onClick={() => onCategoryClick(item.id)}
       >
         {item.title}
       </h3>
-      {/* Subcategories */}
       {subcategories && subcategories.length > 0 && (
         <div className="mt-2 text-left">
-          <ul className="list-disc pl-4 text-xs text-gray-600">
+          <ul className="list-none pl-0 text-xs text-gray-600 space-y-1">
             {subcategories.map((subcategory) => (
-              <li 
+              <li
                 key={subcategory.id}
-                className="hover:text-blue-600 hover:underline"
+                className="cursor-pointer py-2 px-4 rounded-lg hover:bg-blue-100 hover:text-blue-600 hover:underline transition duration-200"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent category click
+                  e.stopPropagation();
                   onSubcategoryClick(subcategory.id);
                 }}
               >
@@ -35,6 +43,18 @@ const CategoryCard = ({ item, subcategories, onCategoryClick, onSubcategoryClick
   );
 };
 
+CategoryCard.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    title: PropTypes.string.isRequired,
+    image: PropTypes.string,
+  }),
+  subcategories: PropTypes.array,
+  onCategoryClick: PropTypes.func,
+  onSubcategoryClick: PropTypes.func,
+};
+
+// Composant pour le slider de catégories
 export const CategorySlider = ({ onSubcategorySelect }) => {
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,10 +85,19 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
         });
       } else {
         const response = await fetch(
-          `http://localhost:8000/api/categories/${categoryId}/scategories`
+          `http://localhost:8000/api/categories/${categoryId}/subcategories`
         );
-        const subcategories = await response.json();
-        setSubcategoryMap((prev) => ({ ...prev, [categoryId]: subcategories }));
+        const data = await response.json();
+
+        // Assurer que 'sous_categories' est un tableau
+        const subcategories = Array.isArray(data.sous_categories)
+          ? data.sous_categories
+          : [];
+
+        setSubcategoryMap((prev) => ({
+          ...prev,
+          [categoryId]: subcategories,
+        }));
       }
     } catch (error) {
       console.error("Error fetching subcategories:", error);
@@ -76,11 +105,9 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
   };
 
   const handleSubcategoryClick = (subcategoryId) => {
-    // You can either navigate to a subcategory page or use a callback
     if (onSubcategorySelect) {
       onSubcategorySelect(subcategoryId);
     } else {
-      // Default behavior: navigate to subcategory page
       navigate(`/subcategory/${subcategoryId}`);
     }
   };
@@ -96,39 +123,26 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
   };
 
   return (
-   
     <section className="category-slider pb-16 bg-gray-100">
       <br />
       <Container>
-        {/* Search Box */}
-        <div className="mb-6 relative w-1/2">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 pl-9 pr-24 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          />
-          <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm transition">
-            Search
-          </button>
-        </div>
-
         {/* Heading */}
-        <Heading title="Browse the categories" subtitle="Most viewed and Popular Categories" />
+        <Heading
+          title="Browse the categories"
+          subtitle="Most viewed and Popular Categories"
+        />
 
-        {/* Arrows */}
+        {/* Arrows + Slider */}
         <div className="relative">
           {/* Left Arrow */}
           <button
             onClick={() => scroll(-300)}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white border rounded-full shadow p-2 z-10 hover:bg-gray-100"
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-blue-600 border border-blue-600 rounded-full shadow-lg p-3 z-10 hover:bg-blue-600 hover:text-white transition duration-300"
           >
             <ChevronLeft size={20} />
           </button>
 
-          {/* Category list */}
+          {/* Scrollable Category List */}
           <div
             ref={containerRef}
             className="flex overflow-x-hidden no-scrollbar py-4"
@@ -136,7 +150,11 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
             {filteredCategories.map((item) => (
               <CategoryCard
                 key={item.id}
-                item={{ id: item.id, title: item.titre }}
+                item={{
+                  id: item.id,
+                  title: item.titre,
+                  image: item.image,
+                }}
                 subcategories={subcategoryMap[item.id]}
                 onCategoryClick={handleCategoryClick}
                 onSubcategoryClick={handleSubcategoryClick}
@@ -147,7 +165,7 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
           {/* Right Arrow */}
           <button
             onClick={() => scroll(300)}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white border rounded-full shadow p-2 z-10 hover:bg-gray-100"
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-blue-600 border border-blue-600 rounded-full shadow-lg p-3 z-10 hover:bg-blue-600 hover:text-white transition duration-300"
           >
             <ChevronRight size={20} />
           </button>
@@ -155,4 +173,8 @@ export const CategorySlider = ({ onSubcategorySelect }) => {
       </Container>
     </section>
   );
+};
+
+CategorySlider.propTypes = {
+  onSubcategorySelect: PropTypes.func,
 };

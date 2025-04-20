@@ -180,6 +180,22 @@ export const ProductsDetailsPage = () => {
 
   return (
     <section className="pt-24 px-8 pb-12">
+              <div className="bg-[#241C37] pt-8 h-[40vh] relative content">
+          <Container>
+            <div>
+              <Title level={3} className="text-white">Details</Title>
+              <div className="flex items-center gap-3">
+                <Title level={5} className="text-white font-normal text-xl">Home</Title>
+                <Title level={5} className="text-white font-normal text-xl">/</Title>
+                <Title level={5} className="text-white font-normal text-xl">Auctions In</Title>
+                <Title level={5} className="text-white font-normal text-xl">/</Title>
+                <Title level={5} className="text-white font-normal text-xl">Details</Title>
+
+              </div>
+            </div>
+          </Container>
+        </div>
+        <br />
       <Container>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Product Image */}

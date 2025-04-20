@@ -36,6 +36,7 @@ export { AddProduct } from "../screens/product/AddProject";
 export { ProductEdit } from "../screens/product/ProductEdit";
 export { ProductList } from "../screens/product/productlist/ProductList";
 export { ProductsDetailsPage } from "../screens/product/ProductsDetailsPage";
+export { AuctionProductList } from "../components/hero/AuctionProductList";
 
 // Utilis Routes
 export { DateFormatter } from "../utils/DateFormatter";

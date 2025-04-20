@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ProductList } from "../hero/ProductList";
+import { AuctionProductList } from "../hero/AuctionProductList";
 import { FilterSide } from "./FilterSide";
 import { Container, Title } from "../../router";
 import { FiFilter } from "react-icons/fi";
@@ -125,7 +125,7 @@ export const ListAuction = () => {
 
         {/* Product list */}
         <div className="w-full lg:w-3/4">
-          <ProductList selectedSubcategory={selectedSubcategory} priceRange={priceFilter} />
+          <AuctionProductList selectedSubcategory={selectedSubcategory} priceRange={priceFilter} />
         </div>
       </div>
     </>
